@@ -19,7 +19,7 @@ Pythonista prompt when needed.)
 2. Select the App Folder option.
 3. Give your app a name. I recommend Synchronator-<your name>.
     The app name you choose MUST be unique.
-    
+
 If the previous steps were successful then you have created
 an app and are now on a page where you can edit the properties
 for your app.
@@ -54,18 +54,20 @@ dbx = DropboxSetup.init('<TOKEN_FILENAME>', '<ACCESS_TOKEN>')
 import dropbox
 import os
 
+try:
+    raw_input          # Python 2
+except NameError:
+    raw_input = input  # Python 3
+
 
 def __read_token(token_directory, token_filename):
-    token_fr = open(token_directory + token_filename)
-    access_token = token_fr.read()
-    token_fr.close()
-    return access_token
+    with open(token_directory + token_filename) as in_file:
+        return in_file.read()
 
 
 def __write_token(token_directory, token_filename, access_token):
-    token_fr = open(token_directory + token_filename, 'w')
-    token_fr.write(access_token)
-    token_fr.close()
+    with open(token_directory + token_filename, 'w') as out_file:
+        out_file.write(access_token)
 
 
 def init(token_filename, access_token=None, token_directory='.Tokens'):
@@ -76,14 +78,13 @@ def init(token_filename, access_token=None, token_directory='.Tokens'):
     string -- access_token (default None)
     string -- token_directory (default 'Tokens')
     """
-    if token_directory is None:
-        token_directory = ''
-    if (token_directory != '') and (token_directory[-1] != os.sep):
+    token_directory = token_directory or ''
+    if token_directory and (token_directory[-1] != os.sep):
         token_directory += os.sep
-    if token_directory not in ['', '.']:
+    if token_directory not in ('', '.'):
         if not os.path.exists(token_directory):
             os.mkdir(token_directory)
-    if access_token is None:
+    if not access_token:
         if os.path.exists(token_directory + token_filename):
             access_token = __read_token(token_directory, token_filename)
         else:
@@ -113,9 +114,4 @@ def get_token_filename():
 
 
 if __name__ == '__main__':
-
-
-    token_filename = get_token_filename()
-    access_token = get_access_token()
-    dbx = init(token_filename, access_token)
-
+    dbx = init(get_token_filename(), get_access_token())

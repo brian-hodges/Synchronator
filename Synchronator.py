@@ -3,23 +3,18 @@ Synchronator.py
 Version: 1.2.0
 Created by: Mark Hamilton
 Created: March 17, 2017
-
 Synchronator is a module that synchronizes
 the files between Pythonista and a Dropbox
 app folder. This allows the files to be
 synched to another device or backed up on
 Dropbox.
-
 Synchronator is implemented on the Dropbox
 API v2.
-
 The Dropbox API v2 now uses an Access Token
 instead of the previous App Token and App
 Secret. To get an Access Token you must go
 to the Dropbox API v2 website at
-
 https://www.dropbox.com/developers
-
 If you are doing this for use by
 Synchronator in Pythonista then follow
 these steps. (It is recommended that you do
@@ -27,18 +22,16 @@ them on the iOS device where you will be
 running Pythonista so that you can easily
 copy the Access Token and paste it into the
 Pythonista prompt when needed.)
-
 1. Create an app that uses the "Dropbox API".
 2. Select the "App Folder" option.
 3. Give your app a name. I recommend
 "Synchronator-<your name>". The app name you
 choose MUST be unique.
-    
+
 If the previous steps were successful then
 you have created an app and are now on a
 page where you can edit the properties for
 your app.
-
 4. Find the property "Generated Access Token"
 and select the Generate button.
 5. Select and copy the Access Token to the
@@ -48,7 +41,6 @@ iOS device.
 7. Enter the Access Token at the prompt.
 (Copy and paste is ideal so you do not make
 a mistake.)
-
 If everything was done properly then
 Synchronator will attempt to synchronize
 your Pythonista files to Dropbox.
@@ -59,12 +51,11 @@ import DropboxSetup
 import os
 import pickle
 
-
-STATE_FILE = '.dropbox_state'
+DROPBOX_FILES = DropboxSetup.dropbox.files
+STATE_FILENAME = '.dropbox_state'
 
 
 class DropboxState:
-
     def __init__(self):
         self.local_files = {}       # local file metadata
         self.remote_files = {}      # remote file metadata
@@ -74,12 +65,12 @@ class DropboxState:
             self.upload(dbx, path, '-- Not Found Remotely')
         elif os.path.getmtime(path) > self.local_files[path]['modified']:
             self.upload(dbx, path, '-- Local File Changed')
-    
+
     def delete_local(self, path):
         print('\tDeleting Locally: ', path, ' -- File No Longer On Dropbox')
         try:
             os.remove(path)
-        except:
+        except OSError:
             pass
         del self.local_files[path]
         del self.remote_files[path]
@@ -94,12 +85,9 @@ class DropboxState:
         del self.remote_files[path]
 
     def download_remote(self, dbx, path, because=None):
-        if because is None:
-            print('\tDownloading: ', path)
-        else:
-            print('\tDownloading: ', path, because)
+        print('\tDownloading: ', path, because or '')
         head, tail = os.path.split(path)
-        if not os.path.exists(head) and head != '':
+        if head and not os.path.exists(head):
             os.makedirs(head)
         result = dbx.files_download_to_file(path, os.path.join('/', path))
         meta = {
@@ -135,10 +123,7 @@ class DropboxState:
             os.makedir(path)
 
     def upload(self, dbx, path, because=None):
-        if because is None:
-            print('\tUploading: ', path)
-        else:
-            print('\tUploading: ', path, because)
+        print('\tUploading: ', path, because or '')
         size = os.path.getsize(path)
         if size > 140000000:
             with open(path, 'r') as local_fr:
@@ -152,53 +137,53 @@ class DropboxState:
                         result = dbx.files_upload_session_start(data, close)
                         session_id = result.session_id
                     else:
-                        dbx.files_upload_session_append_v2(data, session_cursor, close)
+                        dbx.files_upload_session_append_v2(data,
+                                                           session_cursor,
+                                                           close)
                     offset += len(data)
                     if session_cursor is None:
-                        print('\t.',)
+                        print('\t.', end='')
                     elif offset % 100000000 == 0:
                         print('.: ', offset)
-                        print('\t',)
+                        print('\t', end='')
                     else:
-                        print('.',)
-                    session_cursor = DropboxSetup.dropbox.files.UploadSessionCursor(session_id, offset)
+                        print('.', end='')
+                    session_cursor = DROPBOX_FILES.UploadSessionCursor(session_id,
+                                                                       offset)
                     data = local_fr.read(10000000)
                     close = len(data) < 10000000
-                mode = DropboxSetup.dropbox.files.WriteMode.overwrite
-                commit_info = DropboxSetup.dropbox.files.CommitInfo(os.path.join('/', path), mode, mute=True)
-                result = dbx.files_upload_session_finish(data, session_cursor, commit_info)
+                mode = DROPBOX_FILES.WriteMode.overwrite
+                commit_info = DROPBOX_FILES.CommitInfo(os.path.join('/', path),
+                                                       mode, mute=True)
+                result = dbx.files_upload_session_finish(data, session_cursor,
+                                                         commit_info)
                 print('.')
         else:
             with open(path, 'r') as local_fr:
                 data = local_fr.read()
-                mode = DropboxSetup.dropbox.files.WriteMode.overwrite
-                result = dbx.files_upload(data, os.path.join('/', path), mode, mute=True)
-        meta = {
-            'rev': result.rev,
-            'modified': os.path.getmtime(path)
-        }
+                mode = DROPBOX_FILES.WriteMode.overwrite
+                result = dbx.files_upload(data, os.path.join('/', path), mode,
+                                          mute=True)
+        meta = {'rev': result.rev,
+                'modified': os.path.getmtime(path)}
         self.local_files[path] = meta
         self.remote_files[path] = meta
 
     def __process_remote_entries(self, entries, remote_file_paths):
         for entry in entries:
-            name = entry.name
-            id = entry.id
             path = entry.path_display[1:]
-            if isinstance(entry, DropboxSetup.dropbox.files.FileMetadata):
-                client_modified = entry.client_modified
-                server_modified = entry.server_modified
-                content_hash = entry.content_hash
+            if isinstance(entry, DROPBOX_FILES.FileMetadata):
                 rev = entry.rev
                 if path not in self.local_files:
                     self.download_remote(dbx, path, '-- Not Found Locally')
                 elif rev != self.local_files[path]['rev']:
                     self.download_remote(dbx, path, '-- Remote File Changed')
                 remote_file_paths.add(path)
-            elif isinstance(entry, DropboxSetup.dropbox.files.FolderMetadata):
+            elif isinstance(entry, DROPBOX_FILES.FolderMetadata):
                 if not os.path.exists(path):
                     print('\n\tMaking Directory: ', path)
                     self.make_local_dir(path)
+
 
 def check_local(dbx, state):
     print('\nChecking For New Or Updated Local Files')
@@ -207,7 +192,7 @@ def check_local(dbx, state):
         if valid_dir_for_upload(root):
             for filename in filenames:
                 if valid_filename_for_upload(filename):
-                    filelist.append( os.path.join(root, filename)[2:])
+                    filelist.append(os.path.join(root, filename)[2:])
     for path in filelist:
         state.check_state(dbx, path)
     print('\nChecking For Deleted Local Files')
@@ -216,11 +201,12 @@ def check_local(dbx, state):
         if file not in filelist:
             state.delete_remote(dbx, file)
 
+
 def check_remote(dbx, state):
     print('\nUpdating From Dropbox')
     state.execute_delta(dbx)
-    
-    
+
+
 def init_dropbox():
     dbx = DropboxSetup.init('Synchronator_Token')
     if dbx is None:
@@ -235,7 +221,7 @@ def init_dropbox():
 def load_state():
     print('\nLoading Local State')
     try:
-        with open(STATE_FILE, 'r') as state_fr:
+        with open(STATE_FILENAME, 'r') as state_fr:
             state = pickle.load(state_fr)
     except:
         print('\nCannot Find State File -- Creating New Local State')
@@ -245,7 +231,7 @@ def load_state():
 
 def save_state(state):
     print('\nSaving Local State')
-    with open(STATE_FILE, 'w') as state_fr:
+    with open(STATE_FILENAME, 'w') as state_fr:
         pickle.dump(state, state_fr)
 
 
@@ -265,7 +251,7 @@ def valid_dir_for_upload(dir):
 
 
 def valid_filename_for_upload(filename):
-    return not any((filename == STATE_FILE,      # Synchronator state file
+    return not any((filename == STATE_FILENAME,  # Synchronator state file
                     filename.startswith('.'),    # hidden file
                     filename.startswith('@'),    # temporary file
                     filename.endswith('~'),      # temporary file
@@ -274,8 +260,6 @@ def valid_filename_for_upload(filename):
 
 
 if __name__ == '__main__':
-
-
     print('****************************************')
     print('*     Dropbox File Syncronization      *')
     print('****************************************')
@@ -283,7 +267,7 @@ if __name__ == '__main__':
     # initialize the dropbox session
     dbx = init_dropbox()
     # make sure session creation succeeded
-    if dbx is not None:
+    if dbx:
         # load the sync state
         state = load_state()
         # check dropbox for sync
@@ -292,6 +276,6 @@ if __name__ == '__main__':
         save_state(state)
         # check local for sync
         check_local(dbx, state)
-        # save the sync state    
+        # save the sync state
         save_state(state)
         print('\nSync Complete')
