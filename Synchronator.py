@@ -78,11 +78,11 @@ class DropboxState:
     def delete_remote(self, dbx, path):
         print('\tDeleting On Dropbox: ', path, ' -- File Deleted Locally')
         try:
-            dbx.files_delete(path)
+            dbx.files_delete('/' + path)
+            del self.local_files[path]
+            del self.remote_files[path]
         except:
-            pass
-        del self.local_files[path]
-        del self.remote_files[path]
+            print('\t!Remote Delete Failed!')
 
     def download_remote(self, dbx, path, because=None):
         print('\tDownloading: ', path, because or '')
@@ -98,18 +98,22 @@ class DropboxState:
         self.remote_files[path] = meta
 
     def execute_delta(self, dbx):
-        remote_file_paths = set()
+        current_remote_file_paths = set()
         results = dbx.files_list_folder('', True)
         while True:
             cursor = results.cursor
-            self.__process_remote_entries(results.entries, remote_file_paths)
+            self.__process_remote_entries(results.entries, current_remote_file_paths)
             if not results.has_more:
                 break
             results = dbx.files_list_folder_continue(cursor)
+        # list of file paths that Synchronator thinks are on remote
         remote_files_keys = self.remote_files.keys()
         for path in remote_files_keys:
-            if path not in remote_file_paths:
+            # remote path was not in the current paths from remote
+            if path not in current_remote_file_paths:
+                # path exists locally
                 if path in self.local_files:
+                    # delete file locally
                     self.delete_local(path)
 
     def make_local_dir(self, path):
@@ -169,16 +173,21 @@ class DropboxState:
         self.local_files[path] = meta
         self.remote_files[path] = meta
 
-    def __process_remote_entries(self, entries, remote_file_paths):
+    def __process_remote_entries(self, entries, current_remote_file_paths):
         for entry in entries:
             path = entry.path_display[1:]
             if isinstance(entry, DROPBOX_FILES.FileMetadata):
                 rev = entry.rev
+                # remote file does not currently exist locally
                 if path not in self.local_files:
+                    # download remote file to local
                     self.download_remote(dbx, path, '-- Not Found Locally')
+                # remote and local files have different revisions
                 elif rev != self.local_files[path]['rev']:
+                    # download remote file to local
                     self.download_remote(dbx, path, '-- Remote File Changed')
-                remote_file_paths.add(path)
+                # add remote path to list
+                current_remote_file_paths.add(path)
             elif isinstance(entry, DROPBOX_FILES.FolderMetadata):
                 if not os.path.exists(path):
                     print('\n\tMaking Directory: ', path)
