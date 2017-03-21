@@ -37,6 +37,7 @@ and save it to Pythonista. To do this, go to the console in Pythonista and type 
 following:
 
 import Synchronator
+
 Synchronator.download()
 
 You should see the message 'Synchronator.py Downloaded Successfully'.
