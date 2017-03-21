@@ -224,6 +224,7 @@ def download():
     if r.status_code == requests.codes.ok:
         with open('Synchronator.py', 'w') as script_fr:
             script_fr.write(r.text)
+        print('Synchronator.py Downloaded Successfully')
     else:
         print('!Synchronator.py Download Failed!')
 
