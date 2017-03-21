@@ -36,9 +36,10 @@ There is a function in Synchronator.py named download that will get the code fro
 and save it to Pythonista. To do this, go to the console in Pythonista and type the
 following:
 
+```python
 import Synchronator
-
 Synchronator.download()
+```
 
 You should see the message 'Synchronator.py Downloaded Successfully'.
 
