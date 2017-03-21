@@ -1,6 +1,6 @@
 """
 Synchronator.py
-Version: 1.4.0
+Version: 1.5.0
 Created by: Mark Hamilton
 Created: March 17, 2017
 Synchronator is a module that synchronizes
@@ -50,6 +50,7 @@ from __future__ import print_function
 import DropboxSetup
 import os
 import pickle
+import requests
 
 DROPBOX_FILES = DropboxSetup.dropbox.files
 STATE_FILENAME = '.dropbox_state'
@@ -214,6 +215,17 @@ def check_local(dbx, state):
 def check_remote(dbx, state):
     print('\nUpdating From Dropbox')
     state.execute_delta(dbx)
+
+
+def download():
+    print('\nGetting Synchronator.py From GIT')
+    url = 'https://raw.githubusercontent.com/markhamilton1/Synchronator/master/Synchronator.py'
+    r = requests.get(url)
+    if r.status_code == requests.codes.ok:
+        with open('Synchronator.py', 'w') as script_fr:
+            script_fr.write(r.text)
+    else:
+        print('!Synchronator.py Download Failed!')
 
 
 def init_dropbox():
