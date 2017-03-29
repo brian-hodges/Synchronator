@@ -37,9 +37,10 @@ and save it to Pythonista. To do this, go to the console in Pythonista and type 
 following:
 
 ```python
-import Synchronator
-Synchronator.download()
+import Synchronator; Synchronator.download()
 ```
 
 You should see the message 'Synchronator.py Downloaded Successfully'.
+
+Be sure to check out the Wiki as well for additional info.
 
