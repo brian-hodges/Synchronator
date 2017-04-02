@@ -1,6 +1,6 @@
 """
 Synchronator.py
-Version: 1.5.0
+Version: 1.5.1
 Created by: Mark Hamilton
 Created: March 17, 2017
 Synchronator is a module that synchronizes
