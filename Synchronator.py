@@ -243,7 +243,7 @@ def init_dropbox():
 def load_state():
     print('\nLoading Local State')
     try:
-        with open(STATE_FILENAME, 'r') as state_fr:
+        with open(STATE_FILENAME, 'rb') as state_fr:
             state = pickle.load(state_fr)
     except:
         print('\nCannot Find State File -- Creating New Local State')
@@ -253,8 +253,8 @@ def load_state():
 
 def save_state(state):
     print('\nSaving Local State')
-    with open(STATE_FILENAME, 'w') as state_fr:
-        pickle.dump(state, state_fr)
+    with open(STATE_FILENAME, 'wb') as state_fr:
+        pickle.dump(state, state_fr, pickle.HIGHEST_PROTOCOL)
 
 
 def valid_dir_for_upload(dir):
