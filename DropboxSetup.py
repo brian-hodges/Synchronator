@@ -60,6 +60,39 @@ except NameError:
     raw_input = input  # Python 3
 
 
+def __get_module_version(in_module_name):
+    import importlib
+    mod = importlib.import_module(in_module_name)
+    fmt = "### hasattr({}, '{}')".format(in_module_name, '{}')
+    for attr_name in '__version__ version __VERSION__ PILLOW_VERSION VERSION'.split():
+        if in_module_name == 'markdown' and attr_name == '__version__':
+            continue
+        if in_module_name == 'reportlab':
+            attr_name = 'Version'
+        if hasattr(mod, attr_name):
+            if attr_name != '__version__':
+                print(fmt.format(attr_name))
+            the_attr = getattr(mod, attr_name)
+            return str(the_attr() if callable(the_attr) else the_attr)
+    return '?' * 5
+    
+def __test_version():
+    v = __get_module_version("dropbox")
+    if v != '?????':
+        vp = v.split('.')
+        if len(vp) >= 1:
+            mjv = int(vp[0])
+            if mjv > 7: return True
+            if len(vp) >= 2 and mjv == 7:
+                mnv = int(vp[1])
+                if mnv > 2: return True
+                if len(vp) >= 3 and mnv == 2:
+                    dbv = int(vp[2])
+                    if dbv >= 1:
+                        return True
+    print("DropboxSetup requires package dropbox version 7.2.1 or later!")
+    return False
+
 def __read_token(token_directory, token_filename):
     with open(token_directory + token_filename) as in_file:
         return in_file.read()
@@ -78,6 +111,8 @@ def init(token_filename, access_token=None, token_directory='.Tokens'):
     string -- access_token (default None)
     string -- token_directory (default 'Tokens')
     """
+    if not __test_version():
+        return None
     token_directory = token_directory or ''
     if token_directory and (token_directory[-1] != os.sep):
         token_directory += os.sep
