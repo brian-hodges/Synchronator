@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 """
 Synchronator.py
 Version: 1.5.1
