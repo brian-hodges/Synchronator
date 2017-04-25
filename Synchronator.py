@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 """
 Synchronator.py
-Version: 1.5.1
+Version: 1.6.0
 Created by: Mark Hamilton
 Created: March 17, 2017
 Synchronator is a module that synchronizes
@@ -132,7 +132,7 @@ class DropboxState:
         print('\tUploading: ', path, because or '')
         size = os.path.getsize(path)
         if size > 140000000:
-            with open(path, 'r') as local_fr:
+            with open(path, 'rb') as local_fr:
                 data = local_fr.read(10000000)
                 close = len(data) < 10000000
                 session_id = None
@@ -165,7 +165,7 @@ class DropboxState:
                                                          commit_info)
                 print('.')
         else:
-            with open(path, 'r') as local_fr:
+            with open(path, 'rb') as local_fr:
                 data = local_fr.read()
                 mode = DROPBOX_FILES.WriteMode.overwrite
                 result = dbx.files_upload(data, os.path.join('/', path), mode,
