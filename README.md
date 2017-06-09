@@ -32,7 +32,7 @@ Synchronator for it to work. The following steps can be used to do this.
 If everything was successful then Synchronator will begin synchronizing with Dropbox.
 
 As changes are made to Synchronator.py you will need to update to the latest version.
-There is a function in Synchronator.py named download that will get the code from GIT
+There is a function in Synchronator.py (from version 1.5.1 on) named download that will get the code from GIT
 and save it to Pythonista. To do this, go to the console in Pythonista and type the
 following:
 
