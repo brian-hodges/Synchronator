@@ -109,7 +109,7 @@ class DropboxState:
                 break
             results = dbx.files_list_folder_continue(cursor)
         # list of file paths that Synchronator thinks are on remote
-        remote_files_keys = self.remote_files.keys()
+        remote_files_keys = list(self.remote_files.keys())
         for path in remote_files_keys:
             # remote path was not in the current paths from remote
             if path not in current_remote_file_paths:
@@ -207,7 +207,7 @@ def check_local(dbx, state):
     for path in filelist:
         state.check_state(dbx, path)
     print('\nChecking For Deleted Local Files')
-    oldlist = state.local_files.keys()
+    oldlist = list(state.local_files.keys())
     for file in oldlist:
         if file not in filelist:
             state.delete_remote(dbx, file)
