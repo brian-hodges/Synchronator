@@ -49,6 +49,7 @@ your Pythonista files to Dropbox.
 
 from __future__ import print_function
 import DropboxSetup
+import sys
 import os
 import pickle
 import requests
@@ -284,6 +285,10 @@ def valid_filename_for_upload(filename):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        os.chdir(sys.argv[1])
+    else:
+        os.chdir(os.path.expanduser('~/Documents'))
     print('****************************************')
     print('*     Dropbox File Syncronization      *')
     print('****************************************')
