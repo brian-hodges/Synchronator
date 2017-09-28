@@ -77,6 +77,11 @@ class DropboxState:
             pass
         del self.local_files[path]
         del self.remote_files[path]
+        dir = os.path.dirname(path)
+        if dir == '':
+            dir = '.'
+        if not os.listdir(dir):
+            os.rmdir(dir)
 
     def delete_remote(self, dbx, path):
         print('\tDeleting On Dropbox: ', path, ' -- File Deleted Locally')
