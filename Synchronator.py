@@ -259,17 +259,18 @@ def save_state(state):
 
 
 def valid_dir_for_upload(dir):
-    for i, part in enumerate(dir.split(os.path.sep)):
-        if part != '.':
-            # hidden directory
-            if part.startswith('.'):
-                return False
-            # Pythonista directory
-            if (i == 1) and part.startswith('site'):
-                return False
-            # temp directory
-            if (i == 1) and (part == 'temp'):
-                return False
+    path = dir.split(os.path.sep)
+    if len(path) > 1:
+        # Pythonista directory
+        if path[1].startswith('site'):
+            return False
+        # temp directory
+        if path[1] in ['temp', 'Examples']:
+            return False
+    for part in path:
+        # hidden directory
+        if part != '.' and part.startswith('.'):
+            return False
     return True
 
 
