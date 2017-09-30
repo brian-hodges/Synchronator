@@ -48,14 +48,36 @@ your Pythonista files to Dropbox.
 """
 
 from __future__ import print_function
-import DropboxSetup
+
 import sys
 import os
 import pickle
 import requests
+from contextlib import contextmanager
+
+import DropboxSetup
+
+try:
+    from console import set_color
+except ImportError:
+    def set_color(r, g, b):
+        pass
 
 DROPBOX_FILES = DropboxSetup.dropbox.files
 STATE_FILENAME = '.dropbox_state'
+
+
+@contextmanager
+def console_color(r, g, b):
+    '''
+    Sets the console output to the specified color
+    Changes it back to black afterwards
+    '''
+    set_color(r, g, b)
+    try:
+        yield
+    finally:
+        set_color(0, 0, 0)
 
 
 class DropboxState:
@@ -70,7 +92,8 @@ class DropboxState:
             self.upload(dbx, path, '-- Local File Changed')
 
     def delete_local(self, path):
-        print('\tDeleting Locally: ', path, ' -- File No Longer On Dropbox')
+        with console_color(1, 0, 0):
+            print('\tDeleting Locally: ', path, ' -- File No Longer On Dropbox')
         try:
             os.remove(path)
         except OSError:
@@ -84,7 +107,8 @@ class DropboxState:
             os.rmdir(dir)
 
     def delete_remote(self, dbx, path):
-        print('\tDeleting On Dropbox: ', path, ' -- File Deleted Locally')
+        with console_color(1, 0, 0):
+            print('\tDeleting On Dropbox: ', path, ' -- File Deleted Locally')
         try:
             dbx.files_delete('/' + path)
             del self.local_files[path]
@@ -93,7 +117,8 @@ class DropboxState:
             print('\t!Remote Delete Failed!')
 
     def download_remote(self, dbx, path, because=None):
-        print('\tDownloading: ', path, because or '')
+        with console_color(0, 0.5, 0):
+            print('\tDownloading: ', path, because or '')
         head, tail = os.path.split(path)
         if head and not os.path.exists(head):
             os.makedirs(head)
@@ -135,7 +160,8 @@ class DropboxState:
             os.makedir(path)
 
     def upload(self, dbx, path, because=None):
-        print('\tUploading: ', path, because or '')
+        with console_color(0, 1, 0):
+            print('\tUploading: ', path, because or '')
         size = os.path.getsize(path)
         if size > 140000000:
             with open(path, 'rb') as local_fr:
@@ -297,9 +323,10 @@ if __name__ == '__main__':
             rootdir = path
     os.chdir(rootdir)
 
-    print('****************************************')
-    print('*     Dropbox File Syncronization      *')
-    print('****************************************')
+    with console_color(0, 0, 1):
+        print('****************************************')
+        print('*     Dropbox File Syncronization      *')
+        print('****************************************')
 
     # initialize the dropbox session
     dbx = init_dropbox()
@@ -315,4 +342,5 @@ if __name__ == '__main__':
         check_local(dbx, state)
         # save the sync state
         save_state(state)
-        print('\nSync Complete')
+        with console_color(0, 0, 1):
+            print('\nSync Complete')
