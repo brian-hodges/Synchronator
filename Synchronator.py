@@ -290,10 +290,13 @@ def valid_filename_for_upload(filename):
 
 
 if __name__ == '__main__':
+    rootdir = os.path.expanduser('~/Documents')
     if len(sys.argv) > 1:
-        os.chdir(sys.argv[1])
-    else:
-        os.chdir(os.path.expanduser('~/Documents'))
+        path = os.path.expanduser(sys.argv[1])
+        if os.path.isdir(path):
+            rootdir = path
+    os.chdir(rootdir)
+
     print('****************************************')
     print('*     Dropbox File Syncronization      *')
     print('****************************************')
