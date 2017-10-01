@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """
 Synchronator.py
-Version: 1.7.0
+Version: 1.8.0
 Created by: Mark Hamilton
 Created: March 17, 2017
 Synchronator is a module that synchronizes
@@ -229,7 +229,8 @@ class DropboxState:
 
 
 def check_local(dbx, state):
-    print('\nChecking For New Or Updated Local Files')
+    with console_color(0, 1, 1):
+        print('\nChecking For New Or Updated Local Files')
     filelist = []
     for root, dirnames, filenames in os.walk('.'):
         if valid_dir_for_upload(root):
@@ -238,7 +239,8 @@ def check_local(dbx, state):
                     filelist.append(os.path.join(root, filename)[2:])
     for path in filelist:
         state.check_state(dbx, path)
-    print('\nChecking For Deleted Local Files')
+    with console_color(0, 1, 1):
+        print('\nChecking For Deleted Local Files')
     oldlist = list(state.local_files.keys())
     for file in oldlist:
         if file not in filelist:
@@ -246,12 +248,14 @@ def check_local(dbx, state):
 
 
 def check_remote(dbx, state):
-    print('\nUpdating From Dropbox')
+    with console_color(0, 1, 1):
+        print('\nUpdating From Dropbox')
     state.execute_delta(dbx)
 
 
 def download():
-    print('\nGetting Synchronator.py From GIT')
+    with console_color(0, 1, 1):
+        print('\nGetting Synchronator.py From GIT')
     url = 'https://raw.githubusercontent.com/markhamilton1/Synchronator/master/Synchronator.py'
     r = requests.get(url)
     if r.status_code == requests.codes.ok:
@@ -274,7 +278,8 @@ def init_dropbox():
 
 
 def load_state():
-    print('\nLoading Local State')
+    with console_color(0, 1, 1):
+        print('\nLoading Local State')
     try:
         with open(STATE_FILENAME, 'rb') as state_fr:
             state = pickle.load(state_fr)
@@ -285,7 +290,8 @@ def load_state():
 
 
 def save_state(state):
-    print('\nSaving Local State')
+    with console_color(0, 1, 1):
+        print('\nSaving Local State')
     with open(STATE_FILENAME, 'wb') as state_fr:
         pickle.dump(state, state_fr, pickle.HIGHEST_PROTOCOL)
 
@@ -323,7 +329,7 @@ if __name__ == '__main__':
             rootdir = path
     os.chdir(rootdir)
 
-    with console_color(0, 0, 1):
+    with console_color(0, 1, 1):
         print('****************************************')
         print('*     Dropbox File Syncronization      *')
         print('****************************************')
@@ -342,5 +348,5 @@ if __name__ == '__main__':
         check_local(dbx, state)
         # save the sync state
         save_state(state)
-        with console_color(0, 0, 1):
+        with console_color(0, 1, 1):
             print('\nSync Complete')
