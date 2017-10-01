@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 """
 Synchronator.py
 Version: 1.6.0
@@ -48,13 +48,36 @@ your Pythonista files to Dropbox.
 """
 
 from __future__ import print_function
-import DropboxSetup
+
+import sys
 import os
 import pickle
 import requests
+from contextlib import contextmanager
+
+import DropboxSetup
+
+try:
+    from console import set_color
+except ImportError:
+    def set_color(r, g, b):
+        pass
 
 DROPBOX_FILES = DropboxSetup.dropbox.files
 STATE_FILENAME = '.dropbox_state'
+
+
+@contextmanager
+def console_color(r, g, b):
+    '''
+    Sets the console output to the specified color
+    Changes it back to black afterwards
+    '''
+    set_color(r, g, b)
+    try:
+        yield
+    finally:
+        set_color(0, 0, 0)
 
 
 class DropboxState:
@@ -69,16 +92,23 @@ class DropboxState:
             self.upload(dbx, path, '-- Local File Changed')
 
     def delete_local(self, path):
-        print('\tDeleting Locally: ', path, ' -- File No Longer On Dropbox')
+        with console_color(1, 0, 0):
+            print('\tDeleting Locally: ', path, ' -- File No Longer On Dropbox')
         try:
             os.remove(path)
         except OSError:
             pass
         del self.local_files[path]
         del self.remote_files[path]
+        dir = os.path.dirname(path)
+        if dir == '':
+            dir = '.'
+        if not os.listdir(dir):
+            os.rmdir(dir)
 
     def delete_remote(self, dbx, path):
-        print('\tDeleting On Dropbox: ', path, ' -- File Deleted Locally')
+        with console_color(1, 0, 0):
+            print('\tDeleting On Dropbox: ', path, ' -- File Deleted Locally')
         try:
             dbx.files_delete('/' + path)
             del self.local_files[path]
@@ -87,7 +117,8 @@ class DropboxState:
             print('\t!Remote Delete Failed!')
 
     def download_remote(self, dbx, path, because=None):
-        print('\tDownloading: ', path, because or '')
+        with console_color(0, 0.5, 0):
+            print('\tDownloading: ', path, because or '')
         head, tail = os.path.split(path)
         if head and not os.path.exists(head):
             os.makedirs(head)
@@ -109,7 +140,7 @@ class DropboxState:
                 break
             results = dbx.files_list_folder_continue(cursor)
         # list of file paths that Synchronator thinks are on remote
-        remote_files_keys = self.remote_files.keys()
+        remote_files_keys = list(self.remote_files.keys())
         for path in remote_files_keys:
             # remote path was not in the current paths from remote
             if path not in current_remote_file_paths:
@@ -129,7 +160,8 @@ class DropboxState:
             os.makedir(path)
 
     def upload(self, dbx, path, because=None):
-        print('\tUploading: ', path, because or '')
+        with console_color(0, 1, 0):
+            print('\tUploading: ', path, because or '')
         size = os.path.getsize(path)
         if size > 140000000:
             with open(path, 'rb') as local_fr:
@@ -207,7 +239,7 @@ def check_local(dbx, state):
     for path in filelist:
         state.check_state(dbx, path)
     print('\nChecking For Deleted Local Files')
-    oldlist = state.local_files.keys()
+    oldlist = list(state.local_files.keys())
     for file in oldlist:
         if file not in filelist:
             state.delete_remote(dbx, file)
@@ -259,17 +291,18 @@ def save_state(state):
 
 
 def valid_dir_for_upload(dir):
-    for i, part in enumerate(dir.split(os.path.sep)):
-        if part != '.':
-            # hidden directory
-            if part.startswith('.'):
-                return False
-            # Pythonista directory
-            if (i == 1) and part.startswith('site'):
-                return False
-            # temp directory
-            if (i == 1) and (part == 'temp'):
-                return False
+    path = dir.split(os.path.sep)
+    if len(path) > 1:
+        # Pythonista directory
+        if path[1].startswith('site'):
+            return False
+        # temp directory
+        if path[1] in ['temp', 'Examples']:
+            return False
+    for part in path:
+        # hidden directory
+        if part != '.' and part.startswith('.'):
+            return False
     return True
 
 
@@ -283,9 +316,17 @@ def valid_filename_for_upload(filename):
 
 
 if __name__ == '__main__':
-    print('****************************************')
-    print('*     Dropbox File Syncronization      *')
-    print('****************************************')
+    rootdir = os.path.expanduser('~/Documents')
+    if len(sys.argv) > 1:
+        path = os.path.expanduser(sys.argv[1])
+        if os.path.isdir(path):
+            rootdir = path
+    os.chdir(rootdir)
+
+    with console_color(0, 0, 1):
+        print('****************************************')
+        print('*     Dropbox File Syncronization      *')
+        print('****************************************')
 
     # initialize the dropbox session
     dbx = init_dropbox()
@@ -301,4 +342,5 @@ if __name__ == '__main__':
         check_local(dbx, state)
         # save the sync state
         save_state(state)
-        print('\nSync Complete')
+        with console_color(0, 0, 1):
+            print('\nSync Complete')
