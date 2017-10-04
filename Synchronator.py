@@ -267,10 +267,11 @@ class DropboxState:
             with console_color(*main_color):
                 answer = reprompt(prompt, ('l', 'r', 'la', 'ra'))
 
-            self.handle_conflict(dbx, path, answer.startswith('r'))
+            action = answer.startswith('r')
+            self.handle_conflict(dbx, path, action)
 
             if answer.endswith('a'):
-                return answer.startswith('r')
+                return action
             else:
                 return None
 
