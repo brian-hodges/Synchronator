@@ -66,6 +66,10 @@ except ImportError:
 
 DROPBOX_FILES = DropboxSetup.dropbox.files
 STATE_FILENAME = '.dropbox_state'
+main_color = (0, 1, 1)
+delete_color = (1, 0, 0)
+download_color = (0, 0.5, 0)
+upload_color = (0, 1, 0)
 
 
 @contextmanager
@@ -93,7 +97,7 @@ class DropboxState:
             self.upload(dbx, path, '-- Local File Changed')
 
     def delete_local(self, path):
-        with console_color(1, 0, 0):
+        with console_color(*delete_color):
             print('\tDeleting Locally: ', path, ' -- File No Longer On Dropbox')
         try:
             os.remove(path)
@@ -109,7 +113,7 @@ class DropboxState:
             os.removedirs(dir)
 
     def delete_remote(self, dbx, path):
-        with console_color(1, 0, 0):
+        with console_color(*delete_color):
             print('\tDeleting On Dropbox: ', path, ' -- File Deleted Locally')
         try:
             dbx.files_delete('/' + path)
@@ -137,7 +141,7 @@ class DropboxState:
                 
 
     def download_remote(self, dbx, path, because=None):
-        with console_color(0, 0.5, 0):
+        with console_color(*download_color):
             print('\tDownloading: ', path, because or '')
         head, tail = os.path.split(path)
         if head and not os.path.exists(head):
@@ -180,7 +184,7 @@ class DropboxState:
             os.makedir(path)
 
     def upload(self, dbx, path, because=None):
-        with console_color(0, 1, 0):
+        with console_color(*upload_color):
             print('\tUploading: ', path, because or '')
         size = os.path.getsize(path)
         if size > 140000000:
@@ -249,7 +253,7 @@ class DropboxState:
 
 
 def check_local(dbx, state):
-    with console_color(0, 1, 1):
+    with console_color(*main_color):
         print('\nChecking For New Or Updated Local Files')
     filelist = []
     invaliddirs = set()
@@ -265,7 +269,7 @@ def check_local(dbx, state):
             invaliddirs.update(map(partial(os.path.join, root), dirnames))
     for path in filelist:
         state.check_state(dbx, path)
-    with console_color(0, 1, 1):
+    with console_color(*main_color):
         print('\nChecking For Deleted Local Files')
     oldlist = list(state.local_files.keys())
     for file in oldlist:
@@ -274,13 +278,13 @@ def check_local(dbx, state):
 
 
 def check_remote(dbx, state):
-    with console_color(0, 1, 1):
+    with console_color(*main_color):
         print('\nUpdating From Dropbox')
     state.execute_delta(dbx)
 
 
 def download():
-    with console_color(0, 1, 1):
+    with console_color(*main_color):
         print('\nGetting Synchronator.py From GIT')
     url = 'https://raw.githubusercontent.com/markhamilton1/Synchronator/master/Synchronator.py'
     r = requests.get(url)
@@ -304,7 +308,7 @@ def init_dropbox():
 
 
 def load_state():
-    with console_color(0, 1, 1):
+    with console_color(*main_color):
         print('\nLoading Local State')
     try:
         with open(STATE_FILENAME, 'rb') as state_fr:
@@ -316,7 +320,7 @@ def load_state():
 
 
 def save_state(state):
-    with console_color(0, 1, 1):
+    with console_color(*main_color):
         print('\nSaving Local State')
     with open(STATE_FILENAME, 'wb') as state_fr:
         pickle.dump(state, state_fr, pickle.HIGHEST_PROTOCOL)
@@ -356,7 +360,7 @@ if __name__ == '__main__':
             rootdir = path
     os.chdir(rootdir)
 
-    with console_color(0, 1, 1):
+    with console_color(*main_color):
         print('****************************************')
         print('*     Dropbox File Syncronization      *')
         print('****************************************')
@@ -375,5 +379,5 @@ if __name__ == '__main__':
         check_local(dbx, state)
         # save the sync state
         save_state(state)
-        with console_color(0, 1, 1):
+        with console_color(*main_color):
             print('\nSync Complete')
