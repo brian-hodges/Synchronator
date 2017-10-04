@@ -78,7 +78,7 @@ def init(token_filename, access_token=None, token_directory='.Tokens'):
     string -- access_token (default None)
     string -- token_directory (default 'Tokens')
     """
-   token_directory = token_directory or ''
+    token_directory = token_directory or ''
     if token_directory and (token_directory[-1] != os.sep):
         token_directory += os.sep
     if token_directory not in ('', '.'):
