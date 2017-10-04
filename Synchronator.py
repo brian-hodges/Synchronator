@@ -66,6 +66,7 @@ except ImportError:
 
 DROPBOX_FILES = DropboxSetup.dropbox.files
 STATE_FILENAME = '.dropbox_state'
+start_end_color = (0, 1, 1)
 main_color = (0, 1, 1)
 delete_color = (1, 0, 0)
 download_color = (0, 0.5, 0)
@@ -360,7 +361,7 @@ if __name__ == '__main__':
             rootdir = path
     os.chdir(rootdir)
 
-    with console_color(*main_color):
+    with console_color(*start_end_color):
         print('****************************************')
         print('*     Dropbox File Syncronization      *')
         print('****************************************')
@@ -379,5 +380,5 @@ if __name__ == '__main__':
         check_local(dbx, state)
         # save the sync state
         save_state(state)
-        with console_color(*main_color):
+        with console_color(*start_end_color):
             print('\nSync Complete')
