@@ -124,7 +124,7 @@ class DropboxState:
         dir = os.path.dirname(path)
         if dir == '':
             dir = '.'
-        if not os.listdir(dir):
+        if os.path.exists(dir) and not os.listdir(dir):
             print('\tFolder Empty:', path, ' -- Deleting')
             os.removedirs(dir)
 
@@ -141,7 +141,7 @@ class DropboxState:
             dir = os.path.dirname(path)
             if dir == '':
                 dir = '.'
-            if not os.listdir(dir):
+            if os.path.exists(dir) and not os.listdir(dir):
                 print('\tFolder Empty:', dir, ' -- Deleting')
                 os.removedirs(dir)
 
