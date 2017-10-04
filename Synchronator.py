@@ -53,6 +53,7 @@ import sys
 import os
 import pickle
 import requests
+from functools import partial
 from contextlib import contextmanager
 
 import DropboxSetup
@@ -251,11 +252,17 @@ def check_local(dbx, state):
     with console_color(0, 1, 1):
         print('\nChecking For New Or Updated Local Files')
     filelist = []
+    invaliddirs = set()
     for root, dirnames, filenames in os.walk('.'):
-        if valid_dir_for_upload(root):
+        if root in invaliddirs:
+            invaliddirs.update(map(partial(os.path.join, root), dirnames))
+        elif valid_dir_for_upload(root):
             for filename in filenames:
                 if valid_filename_for_upload(filename):
                     filelist.append(os.path.join(root, filename)[2:])
+        else:
+            invaliddirs.add(root)
+            invaliddirs.update(map(partial(os.path.join, root), dirnames))
     for path in filelist:
         state.check_state(dbx, path)
     with console_color(0, 1, 1):
@@ -316,6 +323,8 @@ def save_state(state):
 
 
 def valid_dir_for_upload(dir):
+    if dir == '.':
+        return True
     path = dir.split(os.path.sep)
     if len(path) > 1:
         # Pythonista directory
@@ -324,9 +333,8 @@ def valid_dir_for_upload(dir):
         # temp directory
         if path[1] in ['temp', 'Examples']:
             return False
-    for part in path:
         # hidden directory
-        if part != '.' and part.startswith('.'):
+        if path[-1] != '.' and path[-1].startswith('.'):
             return False
     return True
 
