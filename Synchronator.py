@@ -52,10 +52,11 @@ from __future__ import print_function
 import sys
 import os
 import pickle
-import requests
+import textwrap
 from functools import partial
 from contextlib import contextmanager
 
+import requests
 import DropboxSetup
 
 try:
@@ -86,15 +87,29 @@ def console_color(r, g, b):
         set_color(0, 0, 0)
 
 
+def reprompt(prompt, responses):
+    if sys.version_info[0] < 3:
+        get = raw_input
+    else:
+        get = input
+    answer = responses
+    while answer not in responses:
+        answer = get(prompt)
+    return answer
+
+
 class DropboxState:
     def __init__(self):
         self.local_files = {}       # local file metadata
         self.remote_files = {}      # remote file metadata
 
+    def check_local_update(self, path):
+        return os.path.getmtime(path) > self.local_files[path]['modified']
+
     def check_state(self, dbx, path):
         if path not in self.remote_files:
             self.upload(dbx, path, '-- Not Found Remotely')
-        elif os.path.getmtime(path) > self.local_files[path]['modified']:
+        elif self.check_local_update(path):
             self.upload(dbx, path, '-- Local File Changed')
 
     def delete_local(self, path):
@@ -139,7 +154,6 @@ class DropboxState:
                     print('\tRemote Delete Failed!')
                     break
                 dir = os.path.dirname(dir)
-                
 
     def download_remote(self, dbx, path, because=None):
         with console_color(*download_color):
@@ -232,7 +246,36 @@ class DropboxState:
         self.local_files[path] = meta
         self.remote_files[path] = meta
 
+    def handle_conflict(self, dbx, path, prefer_remote=None):
+        if prefer_remote is not None:
+            if prefer_remote:
+                self.download_remote(dbx, path, '-- Preferring Remote File')
+            else:
+                self.upload(dbx, path, '-- Preferring Local File')
+            return prefer_remote
+        else:
+            prompt = '''\
+            Conflict detected at {}
+            Please choose which version to keep
+            enter "l" to upload the local version
+            enter "r" to download the remote version
+            add "a" to do the same for any other conflicted files
+                i.e. ("la" or "ra")
+            '''.format(path)
+            prompt = textwrap.dedent(prompt)
+            prompt = textwrap.indent(prompt, '\t')
+            with console_color(*main_color):
+                answer = reprompt(prompt, ('l', 'r', 'la', 'ra'))
+
+            self.handle_conflict(dbx, path, answer.startswith('r'))
+
+            if answer.endswith('a'):
+                return answer.startswith('r')
+            else:
+                return None
+
     def __process_remote_entries(self, entries, current_remote_file_paths):
+        prefer_remote = None
         for entry in entries:
             path = entry.path_display[1:]
             if isinstance(entry, DROPBOX_FILES.FileMetadata):
@@ -243,8 +286,13 @@ class DropboxState:
                     self.download_remote(dbx, path, '-- Not Found Locally')
                 # remote and local files have different revisions
                 elif rev != self.local_files[path]['rev']:
-                    # download remote file to local
-                    self.download_remote(dbx, path, '-- Remote File Changed')
+                    if self.check_local_update(path):
+                        # conflict detected, ask user for behavior
+                        prefer_remote = self.handle_conflict(dbx, path, prefer_remote)
+                    else:
+                        # no conflict, download remote file to local
+                        self.download_remote(dbx, path,
+                                             '-- Remote File Changed')
                 # add remote path to list
                 current_remote_file_paths.add(path)
             elif isinstance(entry, DROPBOX_FILES.FolderMetadata):
