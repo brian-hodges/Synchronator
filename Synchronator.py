@@ -104,7 +104,8 @@ class DropboxState:
         if dir == '':
             dir = '.'
         if not os.listdir(dir):
-            os.rmdir(dir)
+            print('\tFolder Empty:', path, ' -- Deleting')
+            os.removedirs(dir)
 
     def delete_remote(self, dbx, path):
         with console_color(1, 0, 0):
@@ -115,6 +116,24 @@ class DropboxState:
             del self.remote_files[path]
         except:
             print('\t!Remote Delete Failed!')
+        else:
+            dir = os.path.dirname(path)
+            if dir == '':
+                dir = '.'
+            if not os.listdir(dir):
+                print('\tFolder Empty:', dir, ' -- Deleting')
+                os.removedirs(dir)
+
+            dir = '/' + dir
+            while len(dir) > 1 and not dbx.files_list_folder(dir).entries:
+                print('\tRemote Folder Empty:', dir, ' -- Deleting')
+                try:
+                    dbx.files_delete(dir)
+                except:
+                    print('\tRemote Delete Failed!')
+                    break
+                dir = os.path.dirname(dir)
+                
 
     def download_remote(self, dbx, path, because=None):
         with console_color(0, 0.5, 0):
