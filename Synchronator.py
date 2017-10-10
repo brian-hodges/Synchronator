@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """
 Synchronator.py
-Version: 1.8.0
+Version: 1.9.0
 Created by: Mark Hamilton
 Created: March 17, 2017
 Synchronator is a module that synchronizes
